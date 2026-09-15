@@ -95,6 +95,10 @@
   <p class="sub">Conexão com a planilha, logo do documento e espaço do aparelho.</p>
 
   <h2>Base de dados</h2>
+  <div class="aviso info" id="cfgFixa" style="display:none">
+    Conexão definida pela empresa, em <strong>js/config.js</strong>. Este aparelho já está ligado à planilha e
+    não há nada para preencher. Para trocar de base, edite aquele arquivo e publique de novo.
+  </div>
   <div class="campo-cfg">
     <label for="cfgUrl">Endereço do aplicativo da web</label>
     <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
@@ -146,6 +150,7 @@
   </div>
 </main>
 
+<script src="js/config.js"></script>
 <script src="js/logo.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/engine.js"></script>

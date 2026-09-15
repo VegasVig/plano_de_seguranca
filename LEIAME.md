@@ -13,6 +13,7 @@ Funciona instalado no celular, sem sinal. Os dados ficam no aparelho e são envi
 | `index.html` | O aplicativo de campo. É a tela que o supervisor usa. |
 | `painel.html` | Painel de gestão da carteira. Lê a base e mostra ranking, revisões vencidas e comparativo de controles. |
 | `Code.gs` | Backend no Google Apps Script. Cria a planilha, a pasta do Drive e responde ao aplicativo. |
+| `js/config.js` | Endereço e chave da base. **É o arquivo que liga todos os celulares de uma vez.** |
 | `js/schema.js` | As perguntas. **É o arquivo que você edita** para incluir ou remover itens. |
 | `js/engine.js` | Índice de maturidade, 49 regras de risco e plano de ação. |
 | `js/pops.js` | Os 40 procedimentos operacionais e a regra que decide quais entram no documento. |
@@ -57,14 +58,47 @@ A partir daí ele abre como aplicativo e funciona sem sinal.
    - Quem tem acesso: **Qualquer pessoa**
 7. Copie a **URL** que termina em `/exec`.
 
-### Ligar o aplicativo à base
+### Ligar todos os celulares de uma vez — recomendado
 
-No celular, abra o aplicativo, toque na engrenagem e preencha:
+Abra `js/config.js`, cole a URL e a chave entre as aspas, e suba o arquivo para o GitHub:
 
-- **Endereço do aplicativo da web** — a URL que termina em `/exec`
-- **Chave de acesso** — a chave do passo 5
+```js
+window.VEGAS_CONFIG = {
+  url:   'https://script.google.com/macros/s/AKfy.../exec',
+  chave: 'vg-9f3a71c0e4b28d55',
+  liberarEspaco: true,
+  autoEnvio: true,
+  travarCampos: true
+};
+```
 
-Toque em **Testar conexão**. Tem que aparecer *Conectado*.
+Pronto. Todo aparelho que abrir o aplicativo já vem ligado à planilha, sem ninguém digitar nada. A tela de
+Configurações mostra o endereço, com a chave mascarada, e os campos ficam travados — ninguém altera sem querer.
+Se um dia a URL mudar, você edita este arquivo, publica, e os 80 celulares pegam a mudança sozinhos na próxima
+vez que abrirem com sinal.
+
+O `travarCampos: true` só trava os dois campos de conexão. O supervisor continua livre para ligar e desligar
+*Liberar espaço* e *Enviar automaticamente* no aparelho dele — os valores do arquivo valem como padrão de fábrica.
+
+### Ligar um celular por vez — alternativa
+
+Se preferir deixar `url` e `chave` em branco, o aplicativo volta a pedir os dados na engrenagem, aparelho por
+aparelho. Preencha os dois campos e toque em **Testar conexão**. Tem que aparecer *Conectado*.
+
+### O que fica exposto
+
+O GitHub Pages é público, então quem abrir o código-fonte da página enxerga a URL e a chave. Isso vale tanto para
+o `config.js` quanto para a chave digitada à mão, porque em qualquer um dos casos ela trafega do navegador.
+Na prática o risco é baixo — é preciso conhecer o endereço do site —, mas trate a chave como uma senha de porta
+de serviço, não de cofre:
+
+- deixe `FOTOS_PUBLICAS: false` no `Code.gs`, como já vem. As fotos no Drive só abrem para quem tem acesso à conta;
+- se um celular sumir ou um funcionário sair mal, rode `gerarNovaChave` no Apps Script, atualize o `config.js` e
+  publique. A chave antiga morre na hora;
+- não use a conta pessoal de ninguém. Crie a planilha e o script numa conta da empresa.
+
+Com a chave, o que alguém consegue é gravar levantamentos na planilha e ler o painel consolidado. Não consegue
+apagar dados nem entrar na conta Google.
 
 ---
 
@@ -157,7 +191,7 @@ Para adicionar um bloco de segmento novo, copie um dos blocos de `window.BLOCOS`
 
 | Sintoma | Causa provável |
 |---|---|
-| *Não conectou* ao testar | A publicação não está como "Qualquer pessoa", ou a chave está errada. Rode `verChave` no Apps Script para conferir. |
+| *Não conectou* ao testar | A publicação não está como "Qualquer pessoa", ou a chave está errada. Rode `verChave` no Apps Script e confira contra o que está em `js/config.js`. |
 | Painel acusa erro depois de atualizar o Code.gs | Faltou republicar. Implantar → Gerenciar implantações → editar a existente → nova versão. |
 | O PDF abre sem a logo | Alguém trocou a logo em Configurações por um arquivo muito grande. Toque em *Usar a padrão*. |
 | A janela do documento não abre | O navegador bloqueou pop-ups. Libere para esse endereço. |

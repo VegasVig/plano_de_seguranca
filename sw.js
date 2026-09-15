@@ -1,9 +1,9 @@
 /* Vegas — service worker. Mantém o app funcionando sem sinal. */
-var CACHE = 'vegas-v2';
+var CACHE = 'vegas-v3';
 var ARQUIVOS = [
   'index.html', 'painel.html', 'manifest.json',
   'css/app.css',
-  'js/logo.js', 'js/schema.js', 'js/engine.js', 'js/pops.js',
+  'js/config.js', 'js/logo.js', 'js/schema.js', 'js/engine.js', 'js/pops.js',
   'js/storage.js', 'js/sync.js', 'js/report.js', 'js/app.js',
   'img/logo-branca.png', 'img/logo-escura.png',
   'img/icon-192.png', 'img/icon-512.png'

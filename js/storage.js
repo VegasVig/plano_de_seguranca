@@ -9,15 +9,36 @@ var DB_STORE = 'fotos';
 var CHAVE_LEV = 'vegas_levantamentos';
 var CHAVE_CFG = 'vegas_config';
 
-/* ---------- configuração ---------- */
+/* ---------- configuração ----------
+   Ordem de precedência:
+   1. endereço e chave gravados em js/config.js  (mandam sempre)
+   2. o que o supervisor digitou no aparelho
+   3. o restante de js/config.js, como valor de fábrica
+   Assim, trocar a URL no GitHub troca em todos os celulares de
+   uma vez, sem ninguém precisar mexer em Configurações.        */
 window.Cfg = {
+  fixo: function () { return window.VEGAS_CONFIG || {}; },
+
+  travado: function () {
+    var f = this.fixo();
+    return !!(f.travarCampos !== false && f.url && f.chave);
+  },
+
   ler: function () {
     try { return JSON.parse(localStorage.getItem(CHAVE_CFG)) || {}; }
     catch (e) { return {}; }
   },
   gravar: function (c) { localStorage.setItem(CHAVE_CFG, JSON.stringify(c)); },
   set: function (k, v) { var c = this.ler(); c[k] = v; this.gravar(c); },
-  get: function (k, padrao) { var c = this.ler(); return c[k] === undefined ? padrao : c[k]; }
+
+  get: function (k, padrao) {
+    var f = this.fixo();
+    if ((k === 'url' || k === 'chave') && f[k]) return f[k];
+    var c = this.ler();
+    if (c[k] !== undefined) return c[k];
+    if (f[k] !== undefined) return f[k];
+    return padrao;
+  }
 };
 
 /* ---------- IndexedDB para fotos ---------- */

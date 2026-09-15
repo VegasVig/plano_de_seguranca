@@ -60,6 +60,7 @@
   <div class="aviso info" id="carregando">Conectando com a base…</div>
 </main>
 
+<script src="js/config.js"></script>
 <script src="js/logo.js"></script>
 <script src="js/schema.js"></script>
 <script src="js/engine.js"></script>
@@ -79,7 +80,7 @@ function iniciar(){
   if(!window.Sync.configurado()){
     document.getElementById('conteudo').innerHTML =
       '<div class="aviso erro">O painel ainda não está ligado à base.</div>' +
-      '<p class="sub">Abra o aplicativo, entre em Configurações e informe o endereço do aplicativo da web e a chave de acesso.</p>' +
+      '<p class="sub">Cole o endereço do aplicativo da web e a chave de acesso em <strong>js/config.js</strong> e publique. Ou informe os dois na engrenagem do aplicativo, neste aparelho.</p>' +
       '<button class="btn" onclick="location.href=\'index.html\'">Ir para as configurações</button>';
     return;
   }

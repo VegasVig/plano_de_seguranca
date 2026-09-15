@@ -325,6 +325,17 @@ function abrirConfig() {
   telas('telaConfig');
   $('cfgUrl').value = window.Cfg.get('url', '');
   $('cfgChave').value = window.Cfg.get('chave', '');
+
+  var travado = window.Cfg.travado();
+  $('cfgUrl').disabled = travado;
+  $('cfgChave').disabled = travado;
+  $('cfgFixa').style.display = travado ? 'block' : 'none';
+  if (travado) {
+    /* mostra só o começo e o fim da chave, para conferência */
+    var k = window.Cfg.get('chave', '');
+    $('cfgChave').value = k.length > 12 ? k.slice(0, 6) + '••••••' + k.slice(-4) : k;
+  }
+
   $('cfgEspaco').checked = window.Cfg.get('liberarEspaco', false);
   $('cfgAuto').checked = window.Cfg.get('autoEnvio', false);
   $('cfgStatus').innerHTML = '';
@@ -386,6 +397,7 @@ document.addEventListener('DOMContentLoaded', function () {
   /* config */
   ['cfgUrl', 'cfgChave'].forEach(function (id) {
     $(id).addEventListener('change', function () {
+      if (window.Cfg.travado()) return;
       window.Cfg.set(id === 'cfgUrl' ? 'url' : 'chave', $(id).value.trim());
     });
   });
@@ -393,8 +405,10 @@ document.addEventListener('DOMContentLoaded', function () {
   $('cfgAuto').addEventListener('change', function () { window.Cfg.set('autoEnvio', this.checked); });
 
   $('btnTestar').addEventListener('click', function () {
-    window.Cfg.set('url', $('cfgUrl').value.trim());
-    window.Cfg.set('chave', $('cfgChave').value.trim());
+    if (!window.Cfg.travado()) {
+      window.Cfg.set('url', $('cfgUrl').value.trim());
+      window.Cfg.set('chave', $('cfgChave').value.trim());
+    }
     $('cfgStatus').innerHTML = '<div class="aviso info">Testando…</div>';
     window.Sync.testar()
       .then(function (r) {
