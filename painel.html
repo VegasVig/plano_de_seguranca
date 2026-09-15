@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1216">
+<title>Vegas — Painel de gestão</title>
+<link rel="icon" href="img/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+<style>
+  .larga{max-width:1180px}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:22px}
+  .kpi{background:var(--painel);border:1px solid var(--linha);border-radius:var(--raio);padding:14px 16px}
+  .kpi .n{font-size:32px;font-weight:800;line-height:1.1}
+  .kpi .r{font-size:13px;color:var(--fraco);margin-top:2px}
+  .kpi.alerta{border-color:#5a2f18}
+  .grade2{display:grid;grid-template-columns:1fr;gap:18px}
+  @media(min-width:900px){.grade2{grid-template-columns:1fr 1fr}}
+  .faixas{display:flex;gap:6px;margin:10px 0 4px;flex-wrap:wrap}
+  .fx{flex:1;min-width:92px;border:1px solid var(--linha);border-radius:9px;padding:10px;
+      background:var(--painel);cursor:pointer;text-align:center}
+  .fx.ativa{border-color:var(--ambar)}
+  .fx .n{font-size:22px;font-weight:800}
+  .fx .r{font-size:11.5px;color:var(--fraco)}
+  table.tab{width:100%;border-collapse:collapse;font-size:14px}
+  table.tab th{text-align:left;padding:9px 8px;border-bottom:1px solid var(--linha);
+      color:var(--fraco);font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;position:sticky;top:0;background:var(--fundo)}
+  table.tab td{padding:9px 8px;border-bottom:1px solid #20252c}
+  table.tab tr:hover td{background:var(--painel)}
+  .rolar{overflow:auto;max-height:560px;border:1px solid var(--linha);border-radius:var(--raio)}
+  .filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+  .filtros select,.filtros input{width:auto;min-width:130px;flex:1}
+  .ctrl{display:flex;align-items:center;gap:10px;padding:7px 0;font-size:14px}
+  .ctrl .nome{flex:1;min-width:0}
+  .ctrl .trilha{width:120px;height:8px;background:var(--painel2);border-radius:4px;overflow:hidden;flex:0 0 auto}
+  .ctrl .pct{width:44px;text-align:right;font-weight:700;flex:0 0 auto}
+  .venc{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #20252c;font-size:14px}
+  .venc .d{color:var(--fraco);font-size:13px;white-space:nowrap}
+  .badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;color:#12151a}
+  @media print{
+    body{background:#fff;color:#000}
+    .topo,.no-print,.rodape-acao{display:none!important}
+    .kpi,.cartao,.rolar{border-color:#bbb;background:#fff;color:#000}
+    .rolar{max-height:none;overflow:visible}
+    table.tab th{background:#fff;color:#000}
+    @page{size:A4 landscape;margin:12mm}
+  }
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <img src="img/logo-branca.png" alt="Vegas" style="height:26px">
+  <span class="titulo">Painel de gestão dos postos</span>
+  <button class="icone-btn" id="btnImprimir" title="Imprimir">⎙</button>
+  <button class="icone-btn" id="btnVoltar" title="Voltar ao aplicativo">✕</button>
+</header>
+
+<main class="tela larga" id="conteudo">
+  <div class="aviso info" id="carregando">Conectando com a base…</div>
+</main>
+
+<script src="js/logo.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/sync.js"></script>
+<script>
+var dados = null, filtro = { seg:'', cidade:'', sup:'', faixa:'', busca:'' }, ordem = { col:'indice', asc:true };
+
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function corIndice(n){return window.faixaIndice(n).cor;}
+function dataBr(s){ if(!s) return '—'; var p=String(s).split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:s; }
+
+document.getElementById('btnVoltar').onclick=function(){location.href='index.html';};
+document.getElementById('btnImprimir').onclick=function(){window.print();};
+
+function iniciar(){
+  if(!window.Sync.configurado()){
+    document.getElementById('conteudo').innerHTML =
+      '<div class="aviso erro">O painel ainda não está ligado à base.</div>' +
+      '<p class="sub">Abra o aplicativo, entre em Configurações e informe o endereço do aplicativo da web e a chave de acesso.</p>' +
+      '<button class="btn" onclick="location.href=\'index.html\'">Ir para as configurações</button>';
+    return;
+  }
+  window.Sync.painel().then(function(r){ dados = r.painel; render(); })
+    .catch(function(e){
+      document.getElementById('conteudo').innerHTML =
+        '<div class="aviso erro">Não foi possível carregar: '+esc(e.message)+'</div>'+
+        '<p class="sub">Se você acabou de atualizar o Code.gs, republique em Implantar, Gerenciar implantações, editar a existente, nova versão. Sem isso a ação do painel ainda não existe no servidor.</p>'+
+        '<button class="btn secundario" onclick="location.reload()">Tentar de novo</button>';
+    });
+}
+
+function render(){
+  var d = dados;
+  if(!d.total){
+    document.getElementById('conteudo').innerHTML =
+      '<div class="lista-vazia">A base está vazia. Faça o primeiro levantamento e envie pelo aplicativo.</div>';
+    return;
+  }
+  var h = '';
+
+  h += '<h1>Carteira de postos</h1><p class="sub">'+d.total+' postos na base · atualizado agora</p>';
+
+  h += '<div class="kpis">'
+    + kpi(d.total,'Postos levantados','')
+    + kpi(d.indiceMedio,'Índice médio da carteira', corIndice(d.indiceMedio))
+    + kpi(d.criticos,'Em nível crítico ou incipiente', d.criticos?'#d34b4f':'')
+    + kpi(d.riscosCriticos,'Riscos críticos em aberto', d.riscosCriticos?'#e0651a':'')
+    + kpi(d.vencidos,'Planos com revisão vencida', d.vencidos?'#d34b4f':'')
+    + '</div>';
+
+  if(d.total < 15){
+    h += '<div class="aviso info">Com menos de 15 postos levantados o índice médio oscila muito e ainda não serve para decisão. '
+      +  'Use por enquanto a lista de riscos recorrentes, que já é útil desde o terceiro posto.</div>';
+  }
+
+  /* dimensões */
+  h += '<div class="grade2"><section><h2>Maturidade média por dimensão</h2>'
+    +  '<p class="sub">Dimensão baixa em toda a carteira é problema de processo seu, não de um cliente.</p>';
+  Object.keys(window.DIMENSOES).forEach(function(k){
+    var v = d.medias[k];
+    h += '<div class="dim-linha"><span class="nome">'+window.DIMENSOES[k]+'</span>'
+      +  '<span class="trilha"><span style="display:block;height:100%;width:'+(v||0)+'%;background:'+(v===null?'#2b3139':corIndice(v))+'"></span></span>'
+      +  '<span class="val">'+(v===null?'—':v)+'</span></div>';
+  });
+  h += '</section>';
+
+  /* distribuição */
+  h += '<section><h2>Distribuição por faixa</h2><p class="sub">Toque em uma faixa para filtrar a tabela.</p><div class="faixas">'
+    + fx('critico','Crítico',d.distribuicao.critico,'#C6282C')
+    + fx('incipiente','Incipiente',d.distribuicao.incipiente,'#E0651A')
+    + fx('basico','Básico',d.distribuicao.basico,'#E8A317')
+    + fx('gerenciado','Gerenciado',d.distribuicao.gerenciado,'#7CB518')
+    + fx('avancado','Avançado',d.distribuicao.avancado,'#2FA84F')
+    + '</div></section></div>';
+
+  /* revisões */
+  h += '<div class="grade2"><section><h2>Revisões vencidas</h2>';
+  h += d.listaVencidos.length
+    ? d.listaVencidos.map(function(p){
+        return '<div class="venc"><span>'+esc(p.cliente)+(p.posto?' — '+esc(p.posto):'')+'</span>'
+          + '<span class="d" style="color:#d34b4f">venceu '+dataBr(p.revisao)+'</span></div>';
+      }).join('')
+    : '<p class="sub">Nenhuma revisão vencida.</p>';
+  h += '</section><section><h2>Vencendo em 60 dias</h2>';
+  h += d.listaVencendo.length
+    ? d.listaVencendo.map(function(p){
+        return '<div class="venc"><span>'+esc(p.cliente)+(p.posto?' — '+esc(p.posto):'')+'</span>'
+          + '<span class="d">'+dataBr(p.revisao)+'</span></div>';
+      }).join('')
+    : '<p class="sub">Nada vencendo nos próximos 60 dias.</p>';
+  h += '</section></div>';
+
+  /* tabela */
+  h += '<h2>Postos</h2>'
+    + '<div class="filtros">'
+    + sel('seg','Todos os segmentos', unicos('segmento'))
+    + sel('cidade','Todas as cidades', unicos('cidade'))
+    + sel('sup','Todos os supervisores', unicos('supervisor'))
+    + '<input type="text" id="fBusca" placeholder="Buscar cliente ou posto" value="'+esc(filtro.busca)+'">'
+    + '<button class="btn secundario" id="btnCsv" style="width:auto;padding:12px 16px">Exportar CSV</button>'
+    + '</div><div class="rolar" id="tabela"></div>';
+
+  /* riscos recorrentes */
+  h += '<div class="grade2"><section><h2>Riscos mais recorrentes</h2>'
+    +  '<p class="sub">Ordenados por postos afetados multiplicado pela gravidade.</p>';
+  h += d.recorrentes.map(function(r){
+    return '<div class="risco-item '+r.nivel.toLowerCase().replace('í','i').replace('é','e')+'">'
+      + '<h4>'+esc(r.titulo)+'</h4>'
+      + '<p>'+r.postos+' de '+d.total+' postos · '+esc(r.cat)+' · nível '+esc(r.nivel)+'</p></div>';
+  }).join('');
+  h += '</section>';
+
+  /* controles */
+  h += '<section><h2>Comparativo de controles</h2>'
+    +  '<p class="sub">Percentual de postos com o controle adequado. É a tela que muda a conversa comercial.</p>';
+  h += d.controles.slice().sort(function(a,b){
+      if(a.pct===null) return 1; if(b.pct===null) return -1; return a.pct-b.pct;
+    }).map(function(c){
+      var p = c.pct===null?0:c.pct;
+      return '<div class="ctrl"><span class="nome">'+esc(c.nome)+'</span>'
+        + '<span class="trilha"><span style="display:block;height:100%;width:'+p+'%;background:'+corIndice(p)+'"></span></span>'
+        + '<span class="pct">'+(c.pct===null?'—':p+'%')+'</span></div>';
+    }).join('');
+  h += '</section></div>';
+
+  h += '<div class="rodape-acao no-print"><button class="btn secundario" onclick="window.print()">Imprimir relatório da carteira</button></div>';
+
+  document.getElementById('conteudo').innerHTML = h;
+  ligar();
+  renderTabela();
+}
+
+function kpi(n,r,cor){
+  return '<div class="kpi'+(cor==='#d34b4f'?' alerta':'')+'"><div class="n"'+(cor?' style="color:'+cor+'"':'')+'>'+n+'</div><div class="r">'+r+'</div></div>';
+}
+function fx(chave,nome,n,cor){
+  return '<button class="fx'+(filtro.faixa===chave?' ativa':'')+'" data-fx="'+chave+'">'
+    + '<div class="n" style="color:'+cor+'">'+n+'</div><div class="r">'+nome+'</div></button>';
+}
+function unicos(campo){
+  var s = {};
+  dados.postos.forEach(function(p){ if(p[campo]) s[p[campo]]=1; });
+  return Object.keys(s).sort();
+}
+function sel(chave,rotulo,lista){
+  return '<select data-f="'+chave+'"><option value="">'+rotulo+'</option>'
+    + lista.map(function(x){ return '<option'+(filtro[chave]===x?' selected':'')+'>'+esc(x)+'</option>'; }).join('')
+    + '</select>';
+}
+
+function filtrados(){
+  var faixaRange = { critico:[0,20], incipiente:[20,40], basico:[40,60], gerenciado:[60,80], avancado:[80,101] };
+  return dados.postos.filter(function(p){
+    if(filtro.seg && p.segmento!==filtro.seg) return false;
+    if(filtro.cidade && p.cidade!==filtro.cidade) return false;
+    if(filtro.sup && p.supervisor!==filtro.sup) return false;
+    if(filtro.faixa){ var f=faixaRange[filtro.faixa]; if(!(p.indice>=f[0]&&p.indice<f[1])) return false; }
+    if(filtro.busca){
+      var t = (p.cliente+' '+p.posto+' '+p.cidade).toLowerCase();
+      if(t.indexOf(filtro.busca.toLowerCase())<0) return false;
+    }
+    return true;
+  }).sort(function(a,b){
+    var x=a[ordem.col], y=b[ordem.col];
+    if(typeof x==='string'){ x=x.toLowerCase(); y=String(y).toLowerCase(); }
+    if(x<y) return ordem.asc?-1:1;
+    if(x>y) return ordem.asc?1:-1;
+    return 0;
+  });
+}
+
+function renderTabela(){
+  var lista = filtrados();
+  var cols = [['cliente','Cliente'],['posto','Posto'],['cidade','Cidade'],['segmento','Segmento'],
+              ['supervisor','Supervisor'],['indice','Índice'],['criticos','Críticos'],
+              ['riscos','Riscos'],['data','Levantado'],['revisao','Revisar até']];
+  var hoje = new Date().toISOString().slice(0,10);
+  var h = '<table class="tab"><thead><tr>'
+    + cols.map(function(c){ return '<th data-c="'+c[0]+'">'+c[1]+(ordem.col===c[0]?(ordem.asc?' ↑':' ↓'):'')+'</th>'; }).join('')
+    + '</tr></thead><tbody>';
+  h += lista.map(function(p){
+    var venc = p.revisao && p.revisao < hoje;
+    return '<tr><td>'+esc(p.cliente)+'</td><td>'+esc(p.posto)+'</td><td>'+esc(p.cidade)+'</td>'
+      + '<td>'+esc(p.segmento)+'</td><td>'+esc(p.supervisor)+'</td>'
+      + '<td><span class="badge" style="background:'+corIndice(p.indice)+'">'+p.indice+'</span></td>'
+      + '<td>'+(p.criticos||'—')+'</td><td>'+(p.riscos||'—')+'</td>'
+      + '<td>'+dataBr(p.data)+'</td>'
+      + '<td'+(venc?' style="color:#d34b4f"':'')+'>'+dataBr(p.revisao)+'</td></tr>';
+  }).join('');
+  h += '</tbody></table>';
+  if(!lista.length) h = '<div class="lista-vazia">Nenhum posto com esses filtros.</div>';
+  document.getElementById('tabela').innerHTML = h;
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-c]'), function(el){
+    el.onclick = function(){
+      if(ordem.col===el.dataset.c) ordem.asc = !ordem.asc;
+      else { ordem.col = el.dataset.c; ordem.asc = true; }
+      renderTabela();
+    };
+  });
+}
+
+function ligar(){
+  Array.prototype.forEach.call(document.querySelectorAll('[data-f]'), function(el){
+    el.onchange = function(){ filtro[el.dataset.f] = el.value; renderTabela(); };
+  });
+  Array.prototype.forEach.call(document.querySelectorAll('[data-fx]'), function(el){
+    el.onclick = function(){
+      filtro.faixa = filtro.faixa===el.dataset.fx ? '' : el.dataset.fx;
+      render();
+    };
+  });
+  var b = document.getElementById('fBusca');
+  if(b) b.oninput = function(){ filtro.busca = b.value; renderTabela(); };
+  var c = document.getElementById('btnCsv');
+  if(c) c.onclick = exportarCsv;
+}
+
+function exportarCsv(){
+  var lista = filtrados();
+  var cab = ['Cliente','Posto','Cidade','Segmento','Supervisor','Indice','Faixa','Criticos','Altos','Riscos','Levantado','Revisar ate'];
+  var linhas = lista.map(function(p){
+    return [p.cliente,p.posto,p.cidade,p.segmento,p.supervisor,p.indice,p.faixa,p.criticos,p.altos,p.riscos,p.data,p.revisao];
+  });
+  var csv = [cab].concat(linhas).map(function(l){
+    return l.map(function(x){ return '"'+String(x==null?'':x).replace(/"/g,'""')+'"'; }).join(';');
+  }).join('\r\n');
+  var blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vegas-carteira-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+}
+
+iniciar();
+</script>
+</body>
+</html>

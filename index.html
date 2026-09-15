@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f1216">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vegas">
+<title>Vegas — Plano de Segurança</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<link rel="icon" href="img/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topo">
+  <img id="logoTopo" src="img/logo-branca.png" alt="Vegas Vigilância e Segurança">
+  <span class="titulo" id="tituloTopo">Plano de Segurança</span>
+  <button class="icone-btn" id="btnPainel" title="Painel de gestão" aria-label="Painel de gestão">▦</button>
+  <button class="icone-btn" id="btnConfig" title="Configurações" aria-label="Configurações">⚙</button>
+</header>
+
+<!-- ============ lista de levantamentos ============ -->
+<main id="telaLista" class="tela">
+  <h1>Levantamentos</h1>
+  <p class="sub" id="resumoLista">Nenhum levantamento ainda.</p>
+  <div id="listaLevantamentos"></div>
+  <div class="btn-linha">
+    <button class="btn" id="btnNovo">Novo levantamento</button>
+  </div>
+</main>
+
+<!-- ============ escolha do segmento ============ -->
+<main id="telaSegmento" class="tela oculto">
+  <h1>Qual é o tipo de local</h1>
+  <p class="sub">A escolha define um bloco de perguntas próprio, além das onze seções comuns. Não dá para trocar depois sem refazer o bloco.</p>
+  <div class="segmentos" id="listaSegmentos"></div>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnVoltarLista">Cancelar</button>
+  </div>
+</main>
+
+<!-- ============ formulário ============ -->
+<div id="telaForm" class="oculto">
+  <div class="form-fixo">
+    <div class="progresso">
+      <div class="progresso-txt"><span id="progTexto">0 de 0 respondidas</span><span id="progPct">0%</span></div>
+      <div class="progresso-barra"><div class="progresso-fill" id="progFill" style="width:0"></div></div>
+    </div>
+    <div class="abas" id="abas"></div>
+  </div>
+  <main class="tela">
+    <h2 id="secaoTitulo"></h2>
+    <div id="perguntas"></div>
+  </main>
+  <div class="rodape-acao">
+    <div class="btn-linha">
+      <button class="btn secundario" id="btnAnterior">Anterior</button>
+      <button class="btn" id="btnProximo">Próxima</button>
+    </div>
+    <div class="btn-linha">
+      <button class="btn secundario" id="btnSalvarSair">Salvar e sair</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ resultado ============ -->
+<main id="telaResultado" class="tela oculto">
+  <h1 id="resTitulo">Resultado</h1>
+  <p class="sub" id="resSub"></p>
+  <div class="indice" id="resIndice"></div>
+  <h2>Maturidade por dimensão</h2>
+  <div id="resDimensoes"></div>
+  <h2>Riscos identificados</h2>
+  <div class="chips" id="resChips"></div>
+  <div id="resRiscos"></div>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnEnviar">Enviar para a base</button>
+    <button class="btn secundario" id="btnEditar">Editar respostas</button>
+  </div>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnDuplicar">Duplicar para outro posto</button>
+    <button class="btn perigo" id="btnApagar">Apagar</button>
+  </div>
+  <div class="rodape-acao">
+    <button class="btn" id="btnGerar">Gerar plano em PDF</button>
+  </div>
+</main>
+
+<!-- ============ configurações ============ -->
+<main id="telaConfig" class="tela oculto">
+  <h1>Configurações</h1>
+  <p class="sub">Conexão com a planilha, logo do documento e espaço do aparelho.</p>
+
+  <h2>Base de dados</h2>
+  <div class="campo-cfg">
+    <label for="cfgUrl">Endereço do aplicativo da web</label>
+    <input type="text" id="cfgUrl" placeholder="https://script.google.com/macros/s/.../exec" autocomplete="off">
+    <p class="ajuda">É a URL que o Apps Script mostra depois de publicar.</p>
+  </div>
+  <div class="campo-cfg">
+    <label for="cfgChave">Chave de acesso</label>
+    <input type="text" id="cfgChave" placeholder="Cole aqui a chave gerada pela função instalar" autocomplete="off">
+  </div>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnTestar">Testar conexão</button>
+  </div>
+  <div id="cfgStatus"></div>
+
+  <h2>Aparelho</h2>
+  <div class="troca">
+    <div>
+      <div class="t">Liberar espaço após enviar</div>
+      <div class="d">Apaga a foto do celular depois que ela chega ao Drive. Na hora de gerar o plano, a imagem é baixada de novo.</div>
+    </div>
+    <label class="switch"><input type="checkbox" id="cfgEspaco"><span class="trilho"></span></label>
+  </div>
+  <div class="troca">
+    <div>
+      <div class="t">Enviar automaticamente</div>
+      <div class="d">Tenta sincronizar assim que você termina um levantamento e há internet.</div>
+    </div>
+    <label class="switch"><input type="checkbox" id="cfgAuto"><span class="trilho"></span></label>
+  </div>
+
+  <h2>Logo do documento</h2>
+  <p class="sub">O sistema já vem com a logo da Vegas. Troque só se precisar de outra versão.</p>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnLogo">Enviar outra logo</button>
+    <button class="btn secundario" id="btnLogoPadrao">Usar a padrão</button>
+  </div>
+  <input type="file" id="arqLogo" accept="image/*" class="oculto">
+
+  <h2>Dados locais</h2>
+  <div class="btn-linha">
+    <button class="btn secundario" id="btnExportar">Exportar cópia (JSON)</button>
+    <button class="btn secundario" id="btnImportar">Importar cópia</button>
+  </div>
+  <input type="file" id="arqImportar" accept="application/json,.json" class="oculto">
+  <p class="sub" style="margin-top:12px">Levantamento que só existe no celular some junto com o celular. Exporte ou sincronize toda semana.</p>
+
+  <div class="rodape-acao">
+    <button class="btn" id="btnFecharConfig">Concluído</button>
+  </div>
+</main>
+
+<script src="js/logo.js"></script>
+<script src="js/schema.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/pops.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/sync.js"></script>
+<script src="js/report.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
