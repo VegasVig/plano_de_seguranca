@@ -8,12 +8,30 @@
    escala  -> opções com valor 0 a 1, entram no índice
    info    -> não pontua, só registra
    ------------------------------------------------------------ */
+
+/* Duas saídas que toda pergunta pontuada oferece.
+   O valor null é o que importa: a pergunta sai da conta do índice
+   em vez de valer zero. Marcar "não se aplica" num posto sem
+   garagem não pode derrubar a nota do cliente.
+   A diferença entre as duas é o que o documento faz depois:
+   NAO_SE_APLICA some do relatório; SEM_INFO vira pendência,
+   listada no capítulo de método para o supervisor voltar lá.   */
+window.NAO_SE_APLICA = 'Não se aplica';
+window.SEM_INFO      = 'Sem informação no momento';
+var NEUTRAS = [[window.NAO_SE_APLICA, null], [window.SEM_INFO, null]];
+
 function esc(id, texto, dim, peso, opcoes, extra) {
-  return Object.assign({ id: id, texto: texto, tipo: 'escala', dim: dim, peso: peso, opcoes: opcoes }, extra || {});
+  return Object.assign({
+    id: id, texto: texto, tipo: 'escala', dim: dim, peso: peso,
+    opcoes: opcoes.concat(NEUTRAS)
+  }, extra || {});
 }
 function sn(id, texto, dim, peso, extra) {
   return esc(id, texto, dim, peso, [['Não', 0], ['Parcialmente', 0.5], ['Sim', 1]], extra);
 }
+
+/* uma opção é neutra quando não tem nota */
+window.opcaoNeutra = function (valor) { return valor === null || valor === undefined; };
 function info(id, texto, tipo, extra) {
   return Object.assign({ id: id, texto: texto, tipo: tipo || 'texto' }, extra || {});
 }
@@ -104,14 +122,14 @@ window.SECOES = [
     ['Adequado, com visibilidade e ventilação', 0.8],
     ['Adequado, blindado ou com vidro de segurança', 1]
   ]),
-  sn('ilu_sanitario', 'O vigilante tem sanitário e local para refeição no posto', 'operacao', 2,
+  sn('ilu_sanitario', 'O colaborador tem sanitário e local para refeição no posto', 'operacao', 2,
     { dica: 'Falta disso é autuação do MTE e reclamatória quase certa.' })
 ]},
 
 { id: 'acesso', titulo: 'Controle de acesso', icone: '4', perguntas: [
   esc('ace_pedestre', 'Controle de entrada de pedestres', 'acesso', 3, [
     ['Portão aberto ou liberado sem conferência', 0],
-    ['Vigilante abre sem registrar', 0.3],
+    ['Colaborador abre sem registrar', 0.3],
     ['Registro em livro ou ficha de papel', 0.6],
     ['Sistema informatizado com documento e foto', 1]
   ]),
@@ -135,7 +153,7 @@ window.SECOES = [
     ['Cadastro, verificação de ordem de serviço e acompanhamento', 1]
   ]),
   esc('ace_funcionario', 'Identificação de funcionários do cliente', 'acesso', 2, [
-    ['Sem identificação, vigilante reconhece de vista', 0],
+    ['Sem identificação, colaborador reconhece de vista', 0],
     ['Crachá sem leitura eletrônica', 0.5],
     ['Crachá com leitura, biometria ou facial', 1]
   ]),
@@ -162,14 +180,14 @@ window.SECOES = [
     ['Não existe', 0], ['Existe mas está desativado', 0.2],
     ['Ativo, sem monitoramento externo', 0.6], ['Ativo e monitorado 24h', 1]
   ]),
-  sn('tec_panico', 'Existe botão de pânico acessível ao vigilante', 'emergencias', 3),
+  sn('tec_panico', 'Existe botão de pânico acessível ao colaborador', 'emergencias', 3),
   sn('tec_incendio', 'Há detecção ou alarme de incêndio', 'emergencias', 2),
   sn('tec_lgpd_cftv', 'Há aviso de monitoramento e política de acesso às imagens', 'governanca', 2,
     { dica: 'LGPD: imagem de pessoa identificável é dado pessoal.' })
 ]},
 
 { id: 'efetivo', titulo: 'Efetivo e escala', icone: '6', perguntas: [
-  info('efe_qtd',    'Quantidade de vigilantes por turno', 'numero'),
+  info('efe_qtd',    'Quantidade de colaboradores por turno', 'numero'),
   info('efe_escala', 'Escala praticada', 'select',
     { opcoes: ['12x36 diurno', '12x36 noturno', '12x36 diurno e noturno', '44h semanais', '5x1', 'Outra'] }),
   esc('efe_dimensionamento', 'O efetivo é suficiente para o tamanho da área', 'operacao', 3, [
@@ -188,13 +206,13 @@ window.SECOES = [
     { dica: 'Portaria 3.233/2012 da PF. Vigilante com reciclagem vencida não pode estar no posto.' }),
   sn('efe_uniforme', 'Uniforme e EPI adequados e em bom estado', 'operacao', 2),
   sn('efe_armado', 'O posto exige vigilante armado e isso está atendido', 'operacao', 2),
-  sn('efe_treinamento_local', 'O vigilante recebeu treinamento específico deste posto', 'operacao', 3)
+  sn('efe_treinamento_local', 'O colaborador recebeu treinamento específico deste posto', 'operacao', 3)
 ]},
 
 { id: 'procedimentos', titulo: 'Procedimentos e registros', icone: '7', perguntas: [
   esc('pro_os', 'Ordem de Serviço escrita do posto', 'operacao', 3, [
     ['Não existe', 0], ['Existe verbalmente', 0.2],
-    ['Existe escrita, desatualizada', 0.6], ['Existe escrita, atual e assinada pelo vigilante', 1]
+    ['Existe escrita, desatualizada', 0.6], ['Existe escrita, atual e assinada pelo colaborador', 1]
   ]),
   sn('pro_pop', 'Existem procedimentos escritos para as situações de rotina', 'operacao', 3),
   esc('pro_livro', 'Registro de ocorrências', 'operacao', 3, [
@@ -223,20 +241,20 @@ window.SECOES = [
   esc('eme_contatos', 'Lista de contatos de emergência no posto', 'emergencias', 2, [
     ['Não existe', 0], ['Existe, desatualizada', 0.4], ['Existe, atual e afixada no posto', 1]
   ]),
-  sn('eme_acionamento', 'O vigilante sabe exatamente quem acionar e em que ordem', 'emergencias', 3)
+  sn('eme_acionamento', 'O colaborador sabe exatamente quem acionar e em que ordem', 'emergencias', 3)
 ]},
 
 { id: 'contingencia', titulo: 'Contingência e continuidade', icone: '9', perguntas: [
   sn('con_energia', 'Existe procedimento escrito para falta de energia', 'contingencia', 3),
   sn('con_gerador', 'Há gerador ou nobreak para os sistemas críticos', 'contingencia', 2),
   sn('con_portao_manual', 'Os portões podem ser abertos manualmente com energia cortada', 'contingencia', 2),
-  esc('con_comunicacao', 'Meio de comunicação do vigilante com a central', 'contingencia', 3, [
-    ['Só celular pessoal do vigilante', 0], ['Celular corporativo', 0.5],
+  esc('con_comunicacao', 'Meio de comunicação do colaborador com a central', 'contingencia', 3, [
+    ['Só celular pessoal do colaborador', 0], ['Celular corporativo', 0.5],
     ['Rádio ou celular corporativo com redundância', 1]
   ]),
   sn('con_falha_sistema', 'Existe plano para queda do sistema de acesso ou do CFTV', 'contingencia', 2),
   sn('con_apoio_tatico', 'Há apoio tático ou pronta resposta contratada', 'contingencia', 2),
-  sn('con_reserva_efetivo', 'Existe vigilante reserva acionável em até 2 horas', 'contingencia', 3)
+  sn('con_reserva_efetivo', 'Existe colaborador reserva acionável em até 2 horas', 'contingencia', 3)
 ]},
 
 { id: 'governanca', titulo: 'Governança e compliance', icone: '10', perguntas: [
@@ -270,7 +288,7 @@ residencial: { id: 'bloco_residencial', titulo: 'Específico do condomínio resi
   esc('res_carona', 'Carona no acesso de pedestres (entrar junto com morador)', 'acesso', 3, [
     ['Acontece direto, ninguém barra', 0],
     ['Acontece às vezes', 0.4],
-    ['O vigilante barra, sem apoio físico', 0.7],
+    ['O colaborador barra, sem apoio físico', 0.7],
     ['Existe catraca, eclusa ou porta com fecho que impede', 1]
   ]),
   esc('res_garagem', 'Risco de clonagem do controle de garagem', 'acesso', 3, [
@@ -369,7 +387,7 @@ industria: { id: 'bloco_industria', titulo: 'Específico de indústria', icone: 
   sn('ind_conferencia_volumes', 'Conferência de volumes na entrada e na saída de material', 'operacao', 2),
   sn('ind_paralisacao', 'Existe protocolo para manifestação ou paralisação no portão', 'emergencias', 3),
   sn('ind_turno_madrugada', 'O turno da madrugada tem cobertura de vigilância equivalente', 'operacao', 2),
-  sn('ind_epi_area', 'O vigilante que entra na área fabril usa EPI adequado', 'operacao', 2),
+  sn('ind_epi_area', 'O colaborador que entra na área fabril usa EPI adequado', 'operacao', 2),
   sn('ind_bolsa', 'Há revista de bolsa ou mochila, com política formal e sem constrangimento', 'acesso', 2,
     { dica: 'Revista íntima é ilegal. Revista de volume precisa de política escrita e critério impessoal.' }),
   sn('ind_ferramenta_particular', 'Existe registro de ferramenta particular que entra e sai', 'acesso', 1),

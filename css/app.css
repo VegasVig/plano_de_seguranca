@@ -214,3 +214,16 @@ input:focus,select:focus,textarea:focus{outline:2px solid var(--ambar);outline-o
 @media(min-width:720px){
   .fotos-grid{grid-template-columns:repeat(4,1fr)}
 }
+
+/* ---------- saídas neutras da pergunta ----------
+   Não se aplica e Sem informação ficam abaixo de uma linha,
+   menores e em cinza: continuam a um toque de distância, mas
+   não competem com as respostas que valem nota. */
+.opcoes-neutras{
+  display:grid;gap:6px;margin-top:10px;padding-top:10px;
+  border-top:1px dashed var(--linha);
+}
+.opcao.neutra{padding:9px 12px;font-size:14px;opacity:.72}
+.opcao.neutra .txt{color:var(--fraco)}
+.opcao.neutra.marcada{opacity:1;border-color:var(--fraco)}
+.opcao.neutra.marcada .txt{color:var(--texto)}

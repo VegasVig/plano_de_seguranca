@@ -1,5 +1,5 @@
 /* Vegas — service worker. Mantém o app funcionando sem sinal. */
-var CACHE = 'vegas-v3';
+var CACHE = 'vegas-v4';
 var ARQUIVOS = [
   'index.html', 'painel.html', 'manifest.json',
   'css/app.css',

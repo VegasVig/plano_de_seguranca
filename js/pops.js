@@ -77,17 +77,17 @@ window.POPS = [
   atencao: 'Rasura invalida o registro. Erro se corrige com nova linha, não apagando a anterior.' },
 
 { id: 'POP-06', nome: 'Passagem de turno', sempre: true,
-  objetivo: 'Impedir que informação pendente se perca na troca de vigilante.',
+  objetivo: 'Impedir que informação pendente se perca na troca de turno.',
   passos: [
     'Chegar com antecedência mínima de 10 minutos.',
     'Ler o registro de ocorrências do turno anterior por inteiro.',
     'Conferir em conjunto: chaves, rádio, lanterna, livro, equipamentos e estado dos acessos.',
     'Receber verbalmente as pendências, inclusive visitantes e prestadores ainda na área.',
     'Verificar o funcionamento de câmeras, alarme e portões.',
-    'Assinar a passagem os dois vigilantes.',
+    'Assinar a passagem os dois colaboradores.',
     'Comunicar qualquer divergência à supervisão antes de assumir.'
   ],
-  atencao: 'Nenhum posto fica sem vigilante durante a passagem. A saída do anterior só acontece depois da assinatura.' },
+  atencao: 'Nenhum posto fica sem colaborador durante a passagem. A saída do anterior só acontece depois da assinatura.' },
 
 { id: 'POP-07', nome: 'Falta de energia elétrica', sempre: true,
   objetivo: 'Manter o controle do acesso quando os sistemas eletrônicos param.',
@@ -132,7 +132,7 @@ window.POPS = [
   atencao: 'Vida antes de patrimônio, sem exceção.' },
 
 { id: 'POP-10', nome: 'Tentativa de invasão', sempre: true,
-  objetivo: 'Proteger a integridade do vigilante e preservar o registro do evento.',
+  objetivo: 'Proteger a integridade do colaborador e preservar o registro do evento.',
   passos: [
     'Não expor a própria posição e não enfrentar.',
     'Acionar o botão de pânico ou a central, com a discrição possível.',
@@ -210,7 +210,7 @@ window.POPS = [
 { id: 'POP-16', nome: 'Comunicação com a supervisão', sempre: true,
   objetivo: 'Definir o que é comunicado na hora e o que entra no relatório.',
   passos: [
-    'Comunicar imediatamente: tentativa de invasão, assalto, incêndio, emergência médica, falta de energia prolongada, ausência de vigilante e falha de sistema crítico.',
+    'Comunicar imediatamente: tentativa de invasão, assalto, incêndio, emergência médica, falta de energia prolongada, ausência de colaborador e falha de sistema crítico.',
     'Comunicar no mesmo turno: equipamento com defeito, chave não devolvida, conflito com morador, usuário ou funcionário do cliente.',
     'Registrar no relatório diário: ocorrências de rotina, visitas, entregas e rondas.',
     'Usar o canal oficial, nunca grupo pessoal de mensagem.',
@@ -231,7 +231,7 @@ window.POPS = [
     'Manter o gravador em local trancado, com acesso restrito.',
     'Respeitar o prazo de retenção definido e não conservar imagem além do necessário.'
   ],
-  atencao: 'Imagem de pessoa identificável é dado pessoal. Vazamento gera responsabilidade da empresa e do vigilante.' },
+  atencao: 'Imagem de pessoa identificável é dado pessoal. Vazamento gera responsabilidade da empresa e do colaborador.' },
 
 { id: 'POP-18', nome: 'Operação do portão de veículos',
   quando: function (v, r) { return (v('ace_veiculo') !== null) || (r.per_estacionamento !== undefined); },
@@ -298,7 +298,7 @@ window.POPS = [
     'Na saída, conferir se o volume corresponde à unidade autorizada.',
     'Registrar início, término e ocorrências.'
   ],
-  atencao: 'Mudança fora do horário autorizado não começa. Autorize apenas a administração, nunca o vigilante.' },
+  atencao: 'Mudança fora do horário autorizado não começa. Autorize apenas a administração, nunca o colaborador.' },
 
 { id: 'POP-R3', nome: 'Controle de áreas comuns e reservas', seg: 'residencial',
   objetivo: 'Manter responsável identificado em cada uso de área comum.',
@@ -314,7 +314,7 @@ window.POPS = [
 
 { id: 'POP-R4', nome: 'Guarda de chaves de unidades', seg: 'residencial',
   quando: function (v) { return v('res_chaves_unidade') !== null; },
-  objetivo: 'Proteger o condomínio e o vigilante da responsabilidade por furto sem arrombamento.',
+  objetivo: 'Proteger o condomínio e o colaborador da responsabilidade por furto sem arrombamento.',
   passos: [
     'Aceitar guarda apenas com autorização escrita do proprietário, com validade definida.',
     'Guardar em cofre ou armário trancado, identificado por código e nunca pelo número da unidade.',

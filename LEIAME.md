@@ -23,6 +23,60 @@ Funciona instalado no celular, sem sinal. Os dados ficam no aparelho e são envi
 
 ---
 
+## O documento é escuro de propósito
+
+O plano sai em tema escuro, com a logo no alto e o aviso de uso restrito no pé de
+todas as páginas. Isso é decisão de produto, não estética: o cliente lê na tela e
+manda por e-mail, e imprimir 39 páginas de fundo preto é caro o bastante para ele
+pensar duas vezes. O aviso no rodapé reforça:
+
+> Uso exclusivo da Vegas Vigilância (sujeito a penalidade contratual)
+
+O texto está em `window.AVISO_USO`, no começo do `js/report.js`, se um dia precisar
+mudar a redação.
+
+Ao salvar em PDF, mantenha marcada a opção **Gráficos em segundo plano** na tela de
+impressão. Sem ela, o navegador descarta os fundos e o arquivo sai branco com texto
+branco. A barra no topo do documento lembra disso.
+
+---
+
+## Não se aplica e Sem informação
+
+Toda pergunta pontuada tem, abaixo das respostas normais, duas saídas:
+
+- **Não se aplica** — o item não existe naquele local
+- **Sem informação no momento** — não deu para verificar na visita
+
+As duas **saem do cálculo do índice em vez de valer zero**. Um posto sem garagem não
+pode ser penalizado por não ter controle de garagem. Se elas contassem zero, o
+índice mediria o tipo do local, não a qualidade da segurança.
+
+A diferença entre as duas aparece no documento. "Não se aplica" só entra na contagem
+de itens excluídos. "Sem informação" vira uma **lista de pendências** no capítulo 3,
+com o nome de cada item, para o supervisor saber o que voltar a verificar.
+
+O sistema também mede a **cobertura**: quantos dos itens pontuáveis entraram na
+conta. Abaixo de 70%, o app avisa na tela de resultado e o documento traz uma
+ressalva dizendo que o número indica tendência, não posição. Se nada for pontuado, o
+índice aparece como "não calculado" em vez de zero — zero significaria segurança
+péssima, e o que existe é levantamento incompleto.
+
+---
+
+## Colaborador, não vigilante
+
+As perguntas falam em **colaborador**, não em vigilante, porque nem todo posto é
+ocupado por vigilante formado: existe porteiro, controlador de acesso, recepcionista.
+
+Seis menções continuam dizendo "vigilante" de propósito, e não devem ser trocadas:
+as que tratam de reciclagem, de posto armado e da Portaria 3.233 da Polícia Federal.
+Ali o termo é a profissão regulada pela Lei 7.102/1983. Trocar por colaborador
+enfraqueceria o capítulo de conformidade, que é justamente o que sustenta a proposta
+em licitação.
+
+---
+
 ## Colocar no ar — parte 1, o aplicativo
 
 Não precisa de terminal em nenhuma etapa.
@@ -60,7 +114,8 @@ A partir daí ele abre como aplicativo e funciona sem sinal.
 
 ### Ligar todos os celulares de uma vez — recomendado
 
-Abra `js/config.js`, cole a URL e a chave entre as aspas, e suba o arquivo para o GitHub:
+Abra **`js/config.js`** — o que está dentro da pasta `js`, não na raiz — cole a URL e
+a chave entre as aspas, e suba o arquivo para o GitHub:
 
 ```js
 window.VEGAS_CONFIG = {

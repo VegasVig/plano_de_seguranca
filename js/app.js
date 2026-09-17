@@ -155,13 +155,26 @@ function campoHTML(p) {
       '<div class="fotos-grid" id="gridFotos"></div></div>';
   }
   if (p.tipo === 'escala') {
+    /* as duas últimas são as saídas neutras. Ficam separadas por uma
+       linha e em corpo menor: são escape, não resposta preferencial. */
+    var comNota = p.opcoes.filter(function (o) { return o[1] !== null && o[1] !== undefined; });
+    var neutras = p.opcoes.filter(function (o) { return o[1] === null || o[1] === undefined; });
+
+    function radio(o, extra) {
+      var marcada = v === o[0];
+      return '<label class="opcao' + (extra || '') + (marcada ? ' marcada' : '') + '">' +
+        '<input type="radio" name="' + p.id + '" value="' + escapar(o[0]) + '"' + (marcada ? ' checked' : '') + '>' +
+        '<span class="marca"></span><span class="txt">' + escapar(o[0]) + '</span></label>';
+    }
+
     return '<div class="pergunta">' + cabeca + '<div class="opcoes">' +
-      p.opcoes.map(function (o, i) {
-        var marcada = v === o[0];
-        return '<label class="opcao' + (marcada ? ' marcada' : '') + '">' +
-          '<input type="radio" name="' + p.id + '" value="' + escapar(o[0]) + '"' + (marcada ? ' checked' : '') + '>' +
-          '<span class="marca"></span><span class="txt">' + escapar(o[0]) + '</span></label>';
-      }).join('') + '</div></div>';
+      comNota.map(function (o) { return radio(o); }).join('') +
+      (neutras.length
+        ? '<div class="opcoes-neutras">' +
+            neutras.map(function (o) { return radio(o, ' neutra'); }).join('') +
+          '</div>'
+        : '') +
+      '</div></div>';
   }
   if (p.tipo === 'select') {
     return '<div class="pergunta">' + cabeca + '<select id="c_' + p.id + '" data-id="' + p.id + '">' +
@@ -291,10 +304,26 @@ function mostrarResultado() {
   $('resTitulo').textContent = r.cliente || 'Levantamento sem nome';
   $('resSub').textContent = [r.local, seg, window.formatarData(r.data)].filter(Boolean).join(' · ');
 
-  $('resIndice').style.borderLeftColor = faixa.cor;
+  $('resIndice').style.borderLeftColor = idx.calculavel ? faixa.cor : '#2b3139';
   $('resIndice').innerHTML =
-    '<div class="n" style="color:' + faixa.cor + '">' + idx.geral + '</div>' +
-    '<div><div class="f">' + faixa.nome + '</div><div class="d">' + faixa.texto + '</div></div>';
+    '<div class="n" style="color:' + (idx.calculavel ? faixa.cor : '#97a1ae') + '">' +
+      (idx.calculavel ? idx.geral : '—') + '</div>' +
+    '<div><div class="f">' + (idx.calculavel ? faixa.nome : 'Não calculado') + '</div>' +
+    '<div class="d">' + (idx.calculavel ? faixa.texto : 'Nenhum item pontuável foi respondido com valor.') +
+    '</div></div>';
+
+  /* cobertura: o índice pode estar montado sobre pouca coisa */
+  var alertaCob = document.getElementById('resCobertura');
+  if (alertaCob) {
+    if (idx.calculavel && idx.cobertura < 70) {
+      alertaCob.hidden = false;
+      alertaCob.innerHTML = 'Índice calculado sobre <b>' + idx.contadas + ' de ' + idx.pontuaveis +
+        '</b> itens pontuáveis (' + idx.cobertura + '%). ' + idx.neutras +
+        ' ficaram como não aplicável ou sem informação. Abaixo de 70% o número indica tendência, não posição.';
+    } else {
+      alertaCob.hidden = true;
+    }
+  }
 
   $('resDimensoes').innerHTML = Object.keys(window.DIMENSOES).map(function (d) {
     var v = idx.dimensoes[d];

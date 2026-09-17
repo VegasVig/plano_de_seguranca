@@ -19,9 +19,9 @@
 
 window.VEGAS_CONFIG = {
 
-  url: '',
+  url: 'https://script.google.com/macros/s/AKfycbwxCeiF271c1PyAkL4mQWCr5lXqvKNVuI2bghCYtMBOR6gT01cYn7JIruGg9qp8HPqqmw/exec',
 
-  chave: '',
+  chave: '49DCD8EDDF5049829626',
 
   /* Apagar a foto do aparelho assim que ela chega ao Drive.
      Deixe true para os 80 postos: sem isso o celular do

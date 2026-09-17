@@ -6,14 +6,20 @@
 /* ---------- Índice de Maturidade em Segurança (0 a 100) ---------- */
 window.calcularIndice = function (respostas, segmento) {
   var acumulado = {}, total = {};
+  var pontuaveis = 0, neutras = 0;
   Object.keys(window.DIMENSOES).forEach(function (d) { acumulado[d] = 0; total[d] = 0; });
 
   window.todasPerguntas(segmento).forEach(function (p) {
     if (p.tipo !== 'escala' || !p.dim) return;
+    pontuaveis++;
     var r = respostas[p.id];
     if (r === undefined || r === null || r === '') return;   // não respondida não conta
     var op = p.opcoes.find(function (o) { return o[0] === r; });
     if (!op) return;
+    /* 'Não se aplica' e 'Sem informação' saem da conta em vez de
+       valer zero: senão o índice pune o cliente por uma pergunta
+       que nem cabia no posto dele */
+    if (op[1] === null || op[1] === undefined) { neutras++; return; }
     acumulado[p.dim] += op[1] * p.peso;
     total[p.dim] += p.peso;
   });
@@ -24,11 +30,53 @@ window.calcularIndice = function (respostas, segmento) {
     somaA += acumulado[d]; somaT += total[d];
   });
 
+  /* quanto do questionário realmente entrou na conta. Abaixo de
+     70% o número existe, mas descreve pouca coisa, e o documento
+     precisa dizer isso em vez de fingir precisão. */
+  var contadas = 0;
+  window.todasPerguntas(segmento).forEach(function (p) {
+    if (p.tipo !== 'escala' || !p.dim) return;
+    var r = respostas[p.id];
+    if (r === undefined || r === null || r === '') return;
+    var op = p.opcoes.find(function (o) { return o[0] === r; });
+    if (op && op[1] !== null && op[1] !== undefined) contadas++;
+  });
+
   return {
     geral: somaT > 0 ? Math.round((somaA / somaT) * 100) : 0,
+    calculavel: somaT > 0,
     dimensoes: dimensoes,
-    respondidas: somaT
+    respondidas: somaT,
+    pontuaveis: pontuaveis,
+    contadas: contadas,
+    neutras: neutras,
+    cobertura: pontuaveis > 0 ? Math.round((contadas / pontuaveis) * 100) : 0
   };
+};
+
+/* perguntas marcadas como sem informação: viram lista de pendências
+   do próprio levantamento, para o supervisor voltar ao posto */
+window.semInformacao = function (respostas, segmento) {
+  var fora = [];
+  window.todasPerguntas(segmento).forEach(function (p) {
+    if (p.tipo !== 'escala') return;
+    if (respostas[p.id] === window.SEM_INFO) {
+      fora.push({ id: p.id, texto: p.texto, dim: p.dim });
+    }
+  });
+  return fora;
+};
+
+/* perguntas marcadas como não se aplica: só o total interessa */
+window.naoSeAplica = function (respostas, segmento) {
+  var fora = [];
+  window.todasPerguntas(segmento).forEach(function (p) {
+    if (p.tipo !== 'escala') return;
+    if (respostas[p.id] === window.NAO_SE_APLICA) {
+      fora.push({ id: p.id, texto: p.texto, dim: p.dim });
+    }
+  });
+  return fora;
 };
 
 window.faixaIndice = function (n) {
@@ -51,7 +99,8 @@ function ctx(respostas, segmento) {
       var p = mapa[id], r = respostas[id];
       if (!p || p.tipo !== 'escala' || r == null || r === '') return null;
       var op = p.opcoes.find(function (o) { return o[0] === r; });
-      return op ? op[1] : null;
+      if (!op || op[1] === null || op[1] === undefined) return null;
+      return op[1];
     },
     /* baixo: respondida e abaixo do limite. Não dispara se não respondeu. */
     baixo: function (id, lim) {
@@ -151,7 +200,7 @@ window.REGRAS = [
   /* -------- operação -------- */
   { id: 'R14', titulo: 'Posto sem Ordem de Serviço escrita', cat: 'Operação', p: 5, i: 4,
     quando: function (c) { return c.baixo('pro_os', 0.5); },
-    consequencia: 'Cada vigilante age de um jeito, não há como cobrar desvio e a empresa fica sem defesa em reclamatória ou em questionamento do cliente.',
+    consequencia: 'Cada colaborador age de um jeito, não há como cobrar desvio e a empresa fica sem defesa em reclamatória ou em questionamento do cliente.',
     tratamento: 'Emitir Ordem de Serviço do posto, colher assinatura de todo o efetivo e afixar cópia no local.',
     prazo: 'imediato' },
 
@@ -169,7 +218,7 @@ window.REGRAS = [
 
   { id: 'R17', titulo: 'Efetivo insuficiente para a área', cat: 'Operação', p: 4, i: 4,
     quando: function (c) { return c.baixo('efe_dimensionamento', 0.4); },
-    consequencia: 'Posto descoberto em algum momento do dia, ronda que não sai e vigilante sem intervalo. Gera incidente e passivo trabalhista ao mesmo tempo.',
+    consequencia: 'Posto descoberto em algum momento do dia, ronda que não sai e colaborador sem intervalo. Gera incidente e passivo trabalhista ao mesmo tempo.',
     tratamento: 'Redimensionar o posto com base na área e no fluxo, ou reduzir formalmente o escopo em aditivo contratual.',
     prazo: '30' },
 
@@ -185,7 +234,7 @@ window.REGRAS = [
     tratamento: 'Fixar frequência mínima de visita, incluir visita noturna surpresa e emitir relatório com foto a cada passagem.',
     prazo: '30' },
 
-  { id: 'R20', titulo: 'Vigilante sem treinamento do posto', cat: 'Operação', p: 4, i: 4,
+  { id: 'R20', titulo: 'Colaborador sem treinamento do posto', cat: 'Operação', p: 4, i: 4,
     quando: function (c) { return c.baixo('efe_treinamento_local', 0.4); },
     consequencia: 'Formação legal não ensina a planta, os riscos e as pessoas daquele local. Erro em emergência costuma nascer aqui.',
     tratamento: 'Criar integração de posto de 4 horas com planta, riscos, contatos e simulação das situações mais prováveis.',
@@ -212,7 +261,7 @@ window.REGRAS = [
 
   { id: 'R24', titulo: 'Comunicação dependente de recurso pessoal', cat: 'Contingência', p: 4, i: 4,
     quando: function (c) { return c.baixo('con_comunicacao', 0.4) || c.baixo('tec_panico', 0.4); },
-    consequencia: 'Vigilante sob ameaça não consegue pedir socorro sem ser percebido. Também significa que a empresa não controla o meio de comunicação do posto.',
+    consequencia: 'Colaborador sob ameaça não consegue pedir socorro sem ser percebido. Também significa que a empresa não controla o meio de comunicação do posto.',
     tratamento: 'Fornecer rádio ou celular corporativo e instalar botão de pânico discreto ligado à central.',
     prazo: '30' },
 
@@ -256,7 +305,7 @@ window.REGRAS = [
   /* -------- condomínio residencial -------- */
   { id: 'S01', seg: 'residencial', titulo: 'Carona no acesso de pedestres', cat: 'Acesso', p: 5, i: 4,
     quando: function (c) { return c.baixo('res_carona', 0.4); },
-    consequencia: 'É o modo de entrada mais usado em roubo a condomínio. O invasor entra colado no morador e o vigilante não tem barreira física para sustentar a recusa.',
+    consequencia: 'É o modo de entrada mais usado em roubo a condomínio. O invasor entra colado no morador e o colaborador não tem barreira física para sustentar a recusa.',
     tratamento: 'Instalar catraca ou eclusa na entrada de pedestres e comunicar a regra aos moradores com apoio formal do síndico.',
     prazo: 'investimento' },
 
@@ -275,12 +324,12 @@ window.REGRAS = [
   { id: 'S04', seg: 'residencial', titulo: 'Mudança sem controle', cat: 'Operação', p: 3, i: 4,
     quando: function (c) { return c.baixo('res_mudanca', 0.4); },
     consequencia: 'Caminhão de mudança é a forma mais simples de retirar volume sem levantar suspeita, inclusive de outra unidade.',
-    tratamento: 'Exigir agendamento, autorização do síndico, identificação da equipe e acompanhamento do vigilante na carga.',
+    tratamento: 'Exigir agendamento, autorização do síndico, identificação da equipe e acompanhamento do colaborador na carga.',
     prazo: 'imediato' },
 
   { id: 'S05', seg: 'residencial', titulo: 'Chaves de unidades na portaria sem controle', cat: 'Acesso', p: 3, i: 5,
     quando: function (c) { return c.baixo('res_chaves_unidade', 0.4); },
-    consequencia: 'Furto sem arrombamento dentro da unidade, com responsabilização direta do condomínio e do vigilante de plantão.',
+    consequencia: 'Furto sem arrombamento dentro da unidade, com responsabilização direta do condomínio e do colaborador de plantão.',
     tratamento: 'Cofre com chaves numeradas, livro de retirada com assinatura e autorização escrita do proprietário.',
     prazo: 'imediato' },
 
@@ -367,7 +416,7 @@ window.REGRAS = [
 
   { id: 'S34', seg: 'industria', titulo: 'Sem protocolo para paralisação no portão', cat: 'Emergências', p: 3, i: 4,
     quando: function (c) { return c.baixo('ind_paralisacao', 0.4); },
-    consequencia: 'Manifestação no portão vira confronto quando o vigilante decide sozinho. Gera dano de imagem e ação judicial.',
+    consequencia: 'Manifestação no portão vira confronto quando o colaborador decide sozinho. Gera dano de imagem e ação judicial.',
     tratamento: 'Protocolo com conduta de não confronto, acionamento de jurídico e RH e registro em vídeo da movimentação.',
     prazo: '30' },
 
